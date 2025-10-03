@@ -421,8 +421,9 @@ with tab4:
         with col3:
             num_points = st.number_input("Number of Points", min_value=5, max_value=100, value=20, step=5)
         with col4:
-            st.write("")  # Spacing
-            generate_button = st.button("🚀 Generate Frontier", type="primary", width='stretch')
+            spacing_type = st.selectbox("Spacing", options=["Linear", "Logarithmic"], index=1)
+        
+        generate_button = st.button("🚀 Generate Frontier", type="primary", width='stretch')
         
         if generate_button:
             if min_lambda >= max_lambda:
@@ -437,7 +438,11 @@ with tab4:
                 if not male_indices or not female_indices:
                     st.error("Need both males and females for analysis!")
                 else:
-                    lambda_values = np.linspace(min_lambda, max_lambda, num_points)
+                    # Generate lambda values based on spacing type
+                    if spacing_type == "Logarithmic":
+                        lambda_values = np.logspace(np.log10(min_lambda), np.log10(max_lambda), num_points)
+                    else:  # Linear
+                        lambda_values = np.linspace(min_lambda, max_lambda, num_points)
                     
                     genetic_merits = []
                     coancestries = []
