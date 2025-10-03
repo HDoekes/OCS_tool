@@ -421,9 +421,8 @@ with tab4:
         with col3:
             num_points = st.number_input("Number of Points", min_value=5, max_value=100, value=20, step=5)
         with col4:
-            spacing_type = st.selectbox("Spacing", options=["Linear", "Logarithmic"], index=1)
-        
-        generate_button = st.button("🚀 Generate Frontier", type="primary", width='stretch')
+            st.write("")  # Spacing
+            generate_button = st.button("🚀 Generate Frontier", type="primary", width='stretch')
         
         if generate_button:
             if min_lambda >= max_lambda:
