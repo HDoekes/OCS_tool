@@ -351,11 +351,11 @@ with tab3:
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.metric("Genetic Merit (c'g)", f"{genetic_merit:.6f}")
+            st.metric("Genetic Merit (c'g)", f"{genetic_merit:.4f}")
         with col2:
-            st.metric("Mean Coancestry (0.5*c'Ac)", f"{mean_coancestry:.6f}")
+            st.metric("Mean Coancestry (0.5*c'Ac)", f"{mean_coancestry:.4f}")
         with col3:
-            st.metric("Objective Function (c'g - λc'Ac)", f"{objective_value:.6f}")
+            st.metric("Objective Function (c'g - λc'Ac)", f"{objective_value:.4f}")
         
         st.markdown("---")
         st.subheader("Constraint Check")
