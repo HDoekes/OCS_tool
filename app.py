@@ -296,7 +296,7 @@ with tab2:
                         
                         if result.success:
                             for i, contrib in enumerate(result.x):
-                                st.session_state.animal_data[i]['contribution'] = contrib
+                                st.session_state.animal_data[i]['contribution'] = round(contrib, 3)
                             st.success("Optimization completed successfully!")
                             st.rerun()
                         else:
