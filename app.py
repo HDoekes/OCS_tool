@@ -91,7 +91,7 @@ tab1, tab2, tab3 = st.tabs(["📋 Setup", "⚡ Optimization", "📊 Interactive 
 with tab1:
     st.header("Setup Parameters")
     
-    col1, col2 = st.columns([1, 2])
+    col1, col2 = st.columns(2)
     
     with col1:
         st.subheader("Number of Animals")
@@ -102,45 +102,10 @@ with tab1:
             initialize_animals(num_animals)
             st.success(f"Initialized {num_animals} animals!")
             st.rerun()
-        
-        st.subheader("Inbreeding Penalty")
-        st.session_state.lambda_penalty = st.number_input("Lambda (λ):", min_value=0.0, value=st.session_state.lambda_penalty, step=0.1, format="%.2f")
     
     with col2:
-        st.subheader("File Operations")
-        
-        # Save setup
-        if st.button("💾 Save Setup"):
-            if st.session_state.animal_data and st.session_state.A_matrix is not None:
-                setup_data = {
-                    'num_animals': st.session_state.num_animals,
-                    'animal_data': st.session_state.animal_data,
-                    'A_matrix': st.session_state.A_matrix.tolist(),
-                    'lambda_penalty': st.session_state.lambda_penalty
-                }
-                json_str = json.dumps(setup_data, indent=2)
-                st.download_button(
-                    label="Download Setup JSON",
-                    data=json_str,
-                    file_name="ocs_setup.json",
-                    mime="application/json"
-                )
-            else:
-                st.warning("Please initialize animals first!")
-        
-        # Load setup
-        uploaded_file = st.file_uploader("📂 Load Setup (JSON)", type=['json'])
-        if uploaded_file is not None:
-            try:
-                setup_data = json.load(uploaded_file)
-                st.session_state.num_animals = setup_data['num_animals']
-                st.session_state.animal_data = setup_data['animal_data']
-                st.session_state.A_matrix = np.array(setup_data['A_matrix'])
-                st.session_state.lambda_penalty = setup_data['lambda_penalty']
-                st.success("Setup loaded successfully!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error loading setup: {str(e)}")
+        st.subheader("Inbreeding Penalty")
+        st.session_state.lambda_penalty = st.number_input("Lambda (λ):", min_value=0.0, value=st.session_state.lambda_penalty, step=0.1, format="%.2f")
     
     # Animal data entry
     if st.session_state.animal_data:
@@ -189,56 +154,48 @@ with tab1:
         st.markdown("Enter the **lower triangle** of the additive genetic relationship matrix (including diagonal). The upper triangle will be filled automatically to maintain symmetry.")
         
         with st.form("matrix_form"):
-            # Create a dataframe for lower triangle input
+            # Create manual input for lower triangle
             n = st.session_state.num_animals
-            lower_triangle_data = []
+            
+            st.markdown("**Edit the lower triangle (cells at or below the diagonal):**")
+            
+            # Create columns for better layout
+            col_labels = st.columns([1] + [1]*n)
+            col_labels[0].write("")
+            for j in range(n):
+                col_labels[j+1].markdown(f"**A{j+1}**")
+            
+            # Create input rows
+            new_A = np.copy(st.session_state.A_matrix)
             
             for i in range(n):
-                row = {}
+                cols = st.columns([1] + [1]*n)
+                cols[0].markdown(f"**Animal {i+1}**")
+                
                 for j in range(n):
-                    if j <= i:
-                        row[f"Animal {j+1}"] = st.session_state.A_matrix[i, j]
-                    else:
-                        row[f"Animal {j+1}"] = ""  # Empty for upper triangle
-                row['Row'] = f"Animal {i+1}"
-                lower_triangle_data.append(row)
-            
-            # Reorder columns to put Row first
-            columns = ['Row'] + [f"Animal {j+1}" for j in range(n)]
-            A_df = pd.DataFrame(lower_triangle_data)[columns]
-            
-            # Configure columns - disable upper triangle
-            column_config = {"Row": st.column_config.TextColumn("", disabled=True)}
-            for j in range(n):
-                column_config[f"Animal {j+1}"] = st.column_config.NumberColumn(
-                    f"Animal {j+1}",
-                    disabled=False,
-                    format="%.4f"
-                )
-            
-            edited_A = st.data_editor(
-                A_df,
-                column_config=column_config,
-                hide_index=True,
-                use_container_width=True,
-                disabled=["Row"],
-                key="matrix_editor"
-            )
+                    if j <= i:  # Lower triangle including diagonal
+                        new_val = cols[j+1].number_input(
+                            f"a_{i}_{j}",
+                            value=float(st.session_state.A_matrix[i, j]),
+                            format="%.4f",
+                            label_visibility="collapsed",
+                            key=f"matrix_{i}_{j}"
+                        )
+                        new_A[i, j] = new_val
+                        new_A[j, i] = new_val  # Mirror to upper triangle
+                    else:  # Upper triangle - show as disabled
+                        cols[j+1].text_input(
+                            f"a_{i}_{j}_disabled",
+                            value="",
+                            disabled=True,
+                            label_visibility="collapsed",
+                            key=f"matrix_disabled_{i}_{j}"
+                        )
             
             # Submit button
             matrix_submitted = st.form_submit_button("💾 Save A-Matrix", use_container_width=True)
             
             if matrix_submitted:
-                # Update A-matrix from lower triangle and mirror to upper triangle
-                new_A = np.zeros((n, n))
-                for i in range(n):
-                    for j in range(n):
-                        if j <= i:
-                            val = edited_A.loc[i, f"Animal {j+1}"]
-                            if val != "" and not pd.isna(val):
-                                new_A[i, j] = float(val)
-                                new_A[j, i] = float(val)  # Mirror to upper triangle
-                
                 st.session_state.A_matrix = new_A
                 st.success("A-Matrix saved!")
         
@@ -250,6 +207,48 @@ with tab1:
                 index=[f"Animal {i+1}" for i in range(n)]
             )
             st.dataframe(full_A_df, use_container_width=True)
+    
+    # File operations at the bottom
+    st.markdown("---")
+    st.subheader("File Operations")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Save Setup**")
+        if st.button("💾 Generate JSON File", use_container_width=True):
+            if st.session_state.animal_data and st.session_state.A_matrix is not None:
+                setup_data = {
+                    'num_animals': st.session_state.num_animals,
+                    'animal_data': st.session_state.animal_data,
+                    'A_matrix': st.session_state.A_matrix.tolist(),
+                    'lambda_penalty': st.session_state.lambda_penalty
+                }
+                json_str = json.dumps(setup_data, indent=2)
+                st.download_button(
+                    label="📥 Download Setup JSON",
+                    data=json_str,
+                    file_name="ocs_setup.json",
+                    mime="application/json",
+                    use_container_width=True
+                )
+            else:
+                st.warning("Please initialize animals first!")
+    
+    with col2:
+        st.markdown("**Load Setup**")
+        uploaded_file = st.file_uploader("📂 Upload JSON file", type=['json'], label_visibility="collapsed")
+        if uploaded_file is not None:
+            try:
+                setup_data = json.load(uploaded_file)
+                st.session_state.num_animals = setup_data['num_animals']
+                st.session_state.animal_data = setup_data['animal_data']
+                st.session_state.A_matrix = np.array(setup_data['A_matrix'])
+                st.session_state.lambda_penalty = setup_data['lambda_penalty']
+                st.success("Setup loaded successfully!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error loading setup: {str(e)}")
 
 # TAB 2: OPTIMIZATION
 with tab2:
