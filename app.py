@@ -146,57 +146,110 @@ with tab1:
     if st.session_state.animal_data:
         st.subheader("Animal Data")
         
-        # Create dataframe for easier editing
-        df_data = []
-        for i, animal in enumerate(st.session_state.animal_data):
-            df_data.append({
-                'Animal': i + 1,
-                'Sex': animal['sex'],
-                'Breeding Value': animal['breeding_value'],
-                'Contribution': animal['contribution']
-            })
-        
-        df = pd.DataFrame(df_data)
-        
-        # Editable dataframe
-        edited_df = st.data_editor(
-            df,
-            column_config={
-                "Animal": st.column_config.NumberColumn("Animal", disabled=True),
-                "Sex": st.column_config.SelectboxColumn("Sex", options=["Male", "Female"], required=True),
-                "Breeding Value": st.column_config.NumberColumn("Breeding Value", format="%.4f"),
-                "Contribution": st.column_config.NumberColumn("Contribution", format="%.6f", min_value=0.0, max_value=1.0)
-            },
-            hide_index=True,
-            use_container_width=True
-        )
-        
-        # Update session state from edited dataframe
-        for i in range(len(edited_df)):
-            st.session_state.animal_data[i]['sex'] = edited_df.loc[i, 'Sex']
-            st.session_state.animal_data[i]['breeding_value'] = float(edited_df.loc[i, 'Breeding Value'])
-            st.session_state.animal_data[i]['contribution'] = float(edited_df.loc[i, 'Contribution'])
+        with st.form("animal_data_form"):
+            # Create dataframe for easier editing
+            df_data = []
+            for i, animal in enumerate(st.session_state.animal_data):
+                df_data.append({
+                    'Animal': i + 1,
+                    'Sex': animal['sex'],
+                    'Breeding Value': animal['breeding_value'],
+                    'Contribution': animal['contribution']
+                })
+            
+            df = pd.DataFrame(df_data)
+            
+            # Editable dataframe
+            edited_df = st.data_editor(
+                df,
+                column_config={
+                    "Animal": st.column_config.NumberColumn("Animal", disabled=True),
+                    "Sex": st.column_config.SelectboxColumn("Sex", options=["Male", "Female"], required=True),
+                    "Breeding Value": st.column_config.NumberColumn("Breeding Value", format="%.4f"),
+                    "Contribution": st.column_config.NumberColumn("Contribution", format="%.6f", min_value=0.0, max_value=1.0)
+                },
+                hide_index=True,
+                use_container_width=True,
+                key="animal_editor"
+            )
+            
+            # Submit button
+            submitted = st.form_submit_button("💾 Save Animal Data", use_container_width=True)
+            
+            if submitted:
+                # Update session state from edited dataframe
+                for i in range(len(edited_df)):
+                    st.session_state.animal_data[i]['sex'] = edited_df.loc[i, 'Sex']
+                    st.session_state.animal_data[i]['breeding_value'] = float(edited_df.loc[i, 'Breeding Value'])
+                    st.session_state.animal_data[i]['contribution'] = float(edited_df.loc[i, 'Contribution'])
+                st.success("Animal data saved!")
         
         # A-matrix input
         st.subheader("A-Matrix (Relationship Matrix)")
-        st.markdown("Enter the additive genetic relationship matrix. The matrix should be symmetric and positive definite.")
+        st.markdown("Enter the **lower triangle** of the additive genetic relationship matrix (including diagonal). The upper triangle will be filled automatically to maintain symmetry.")
         
-        # Show current A-matrix for editing
-        A_df = pd.DataFrame(st.session_state.A_matrix, 
-                           columns=[f"Animal {i+1}" for i in range(st.session_state.num_animals)],
-                           index=[f"Animal {i+1}" for i in range(st.session_state.num_animals)])
+        with st.form("matrix_form"):
+            # Create a dataframe for lower triangle input
+            n = st.session_state.num_animals
+            lower_triangle_data = []
+            
+            for i in range(n):
+                row = {}
+                for j in range(n):
+                    if j <= i:
+                        row[f"Animal {j+1}"] = st.session_state.A_matrix[i, j]
+                    else:
+                        row[f"Animal {j+1}"] = ""  # Empty for upper triangle
+                row['Row'] = f"Animal {i+1}"
+                lower_triangle_data.append(row)
+            
+            # Reorder columns to put Row first
+            columns = ['Row'] + [f"Animal {j+1}" for j in range(n)]
+            A_df = pd.DataFrame(lower_triangle_data)[columns]
+            
+            # Configure columns - disable upper triangle
+            column_config = {"Row": st.column_config.TextColumn("", disabled=True)}
+            for j in range(n):
+                column_config[f"Animal {j+1}"] = st.column_config.NumberColumn(
+                    f"Animal {j+1}",
+                    disabled=False,
+                    format="%.4f"
+                )
+            
+            edited_A = st.data_editor(
+                A_df,
+                column_config=column_config,
+                hide_index=True,
+                use_container_width=True,
+                disabled=["Row"],
+                key="matrix_editor"
+            )
+            
+            # Submit button
+            matrix_submitted = st.form_submit_button("💾 Save A-Matrix", use_container_width=True)
+            
+            if matrix_submitted:
+                # Update A-matrix from lower triangle and mirror to upper triangle
+                new_A = np.zeros((n, n))
+                for i in range(n):
+                    for j in range(n):
+                        if j <= i:
+                            val = edited_A.loc[i, f"Animal {j+1}"]
+                            if val != "" and not pd.isna(val):
+                                new_A[i, j] = float(val)
+                                new_A[j, i] = float(val)  # Mirror to upper triangle
+                
+                st.session_state.A_matrix = new_A
+                st.success("A-Matrix saved!")
         
-        edited_A = st.data_editor(A_df, use_container_width=True)
-        
-        # Update A-matrix
-        st.session_state.A_matrix = edited_A.values
-        
-        # Make symmetric
-        if st.button("Make Matrix Symmetric"):
-            A = st.session_state.A_matrix
-            st.session_state.A_matrix = (A + A.T) / 2
-            st.success("Matrix made symmetric!")
-            st.rerun()
+        # Show the full symmetric matrix (read-only)
+        with st.expander("View Full Symmetric Matrix"):
+            full_A_df = pd.DataFrame(
+                st.session_state.A_matrix,
+                columns=[f"Animal {i+1}" for i in range(n)],
+                index=[f"Animal {i+1}" for i in range(n)]
+            )
+            st.dataframe(full_A_df, use_container_width=True)
 
 # TAB 2: OPTIMIZATION
 with tab2:
