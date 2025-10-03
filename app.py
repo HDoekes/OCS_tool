@@ -331,7 +331,6 @@ with tab3:
     if not st.session_state.animal_data:
         st.warning("Please initialize animals in the Setup tab first!")
     else:
-        
         c = np.array([animal['contribution'] for animal in st.session_state.animal_data])
         g = np.array([animal['breeding_value'] for animal in st.session_state.animal_data])
         A = st.session_state.A_matrix
@@ -436,8 +435,7 @@ with tab4:
                 if not male_indices or not female_indices:
                     st.error("Need both males and females for analysis!")
                 else:
-                    num_steps = int((max_lambda - min_lambda) / step_size) + 1
-                    lambda_values = np.linspace(min_lambda, max_lambda, num_steps)
+                    lambda_values = np.linspace(min_lambda, max_lambda, num_points)
                     
                     genetic_merits = []
                     coancestries = []
@@ -447,7 +445,7 @@ with tab4:
                     status_text = st.empty()
                     
                     for i, lambda_val in enumerate(lambda_values):
-                        status_text.text(f"Processing λ = {lambda_val:.3f} ({i+1}/{len(lambda_values)})")
+                        status_text.text(f"Processing λ = {lambda_val:.3f} ({i+1}/{num_points})")
                         
                         result = optimize_contributions(lambda_val, g, A, male_indices, female_indices)
                         
@@ -464,7 +462,7 @@ with tab4:
                             coancestries.append(np.nan)
                             contributions_list.append(None)
                         
-                        progress_bar.progress((i + 1) / len(lambda_values))
+                        progress_bar.progress((i + 1) / num_points)
                     
                     progress_bar.empty()
                     status_text.empty()
