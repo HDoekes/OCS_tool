@@ -93,7 +93,8 @@ with tab1:
     st.header("Setup Parameters")
     st.markdown("""
     Initiate the population below, by indicating the number of animals, filling in their EBVs, 
-    filling in the A-matrix and (if desired), setting predefined contributions. 
+    filling in the A-matrix and (if desired), setting predefined contributions.
+    
     **Make sure to save the Animal data and the A-matrix before moving to the other tabs!**
     """)
     
