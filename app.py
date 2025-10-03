@@ -364,8 +364,8 @@ with tab3:
             constraint_met = abs(male_sum - 0.5) < 1e-6
             st.metric(
                 "Male contributions sum", 
-                f"{male_sum:.6f}", 
-                delta=None if constraint_met else f"{male_sum - 0.5:.6f}",
+                f"{male_sum:.4f}", 
+                delta=None if constraint_met else f"{male_sum - 0.5:.4f}",
                 delta_color="normal" if constraint_met else "inverse"
             )
             if constraint_met:
@@ -377,8 +377,8 @@ with tab3:
             constraint_met = abs(female_sum - 0.5) < 1e-6
             st.metric(
                 "Female contributions sum", 
-                f"{female_sum:.6f}", 
-                delta=None if constraint_met else f"{female_sum - 0.5:.6f}",
+                f"{female_sum:.4f}", 
+                delta=None if constraint_met else f"{female_sum - 0.5:.4f}",
                 delta_color="normal" if constraint_met else "inverse"
             )
             if constraint_met:
