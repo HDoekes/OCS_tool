@@ -418,7 +418,7 @@ with tab4:
         with col2:
             max_lambda = st.number_input("Max Lambda", min_value=0.1, value=10.0, step=0.5)
         with col3:
-            step_size = st.number_input("Step Size", min_value=0.1, value=0.5, step=0.1)
+            num_points = st.number_input("Number of Points", min_value=5, max_value=100, value=20, step=5)
         with col4:
             st.write("")  # Spacing
             generate_button = st.button("🚀 Generate Frontier", type="primary", use_container_width=True)
@@ -513,30 +513,38 @@ with tab4:
                 showlegend=False
             ))
             
+            # Calculate x-axis range and create ticks every 0.05
+            x_min = np.floor(valid_coancestries.min() * 20) / 20  # Round down to nearest 0.05
+            x_max = np.ceil(valid_coancestries.max() * 20) / 20   # Round up to nearest 0.05
+            x_ticks = np.arange(x_min, x_max + 0.05, 0.05)
+            
             fig.update_layout(
                 title=dict(
                     text='Frontier of Optimal Solutions',
-                    font=dict(size=20, color='black')
+                    font=dict(size=32, color='black')
                 ),
                 xaxis=dict(
-                    title=dict(text='Mean Coancestry', font=dict(size=16, color='black')),
+                    title=dict(text='Mean Coancestry', font=dict(size=24, color='black')),
                     gridcolor='lightgray',
                     gridwidth=0.5,
                     showline=True,
                     linewidth=2,
                     linecolor='black',
-                    mirror=True,
-                    tickfont=dict(size=14, color='black')
+                    mirror=False,  # Only bottom line
+                    tickfont=dict(size=20, color='black'),
+                    tickmode='array',
+                    tickvals=x_ticks,
+                    tickformat='.2f'
                 ),
                 yaxis=dict(
-                    title=dict(text='Genetic Merit', font=dict(size=16, color='black')),
+                    title=dict(text='Genetic Merit', font=dict(size=24, color='black')),
                     gridcolor='lightgray',
                     gridwidth=0.5,
                     showline=True,
                     linewidth=2,
                     linecolor='black',
-                    mirror=True,
-                    tickfont=dict(size=14, color='black')
+                    mirror=False,  # Only left line
+                    tickfont=dict(size=20, color='black')
                 ),
                 height=520,
                 hovermode='closest',
