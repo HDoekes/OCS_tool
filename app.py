@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import json
 from io import StringIO
+import plotly.graph_objects as go
 
 # Page configuration
 st.set_page_config(
@@ -85,11 +86,16 @@ It implements Optimal Contribution Selection (OCS) theory for genetic improvemen
 """)
 
 # Create tabs
-tab1, tab2, tab3, tab4 = st.tabs(["📋 Setup", "⚡ Optimization", "📊 Current Metrics", "📈 Interactive Frontier"])
+tab1, tab2, tab3, tab4 = st.tabs(["📋 Setup", "📊 Current Metrics", "⚡ Optimization", "📈 Interactive Frontier"])
 
 # TAB 1: SETUP
 with tab1:
     st.header("Setup Parameters")
+    st.markdown("""
+    Initiate the population below, by indicating the number of animals, filling in their EBVs, 
+    filling in the A-matrix and (if desired), setting predefined contributions. 
+    **Make sure to save the Animal data and the A-matrix before moving to the other tabs!**
+    """)
     
     col1, col2 = st.columns(2)
     
@@ -206,7 +212,11 @@ with tab1:
     
     # File operations at the bottom
     st.markdown("---")
-    st.subheader("File Operations")
+    st.subheader("Saving and Reading the Population Setup")
+    st.markdown("""
+    With the buttons below you can save the population setup to a .json file, which you can 
+    later read into the application for further usage (without needing to manually fill in all values).
+    """)
     
     col1, col2 = st.columns(2)
     
@@ -246,8 +256,8 @@ with tab1:
             except Exception as e:
                 st.error(f"Error loading setup: {str(e)}")
 
-# TAB 2: OPTIMIZATION
-with tab2:
+# TAB 3: OPTIMIZATION
+with tab3:
     st.header("Optimization")
     
     if not st.session_state.animal_data:
@@ -310,9 +320,14 @@ with tab2:
         
         st.dataframe(pd.DataFrame(contrib_data), use_container_width=True)
 
-# TAB 3: CURRENT METRICS
-with tab3:
+# TAB 2: CURRENT METRICS
+with tab2:
     st.header("Current Metrics")
+    st.markdown("""
+    Determines the summary metrics, based on the current contributions set in the "Setup" tab 
+    (note: you can change those contributions and see how they affect the genetic merit and 
+    coancestry in the offspring generation).
+    """)
     
     if not st.session_state.animal_data:
         st.warning("Please initialize animals in the Setup tab first!")
@@ -340,7 +355,7 @@ with tab3:
         with col2:
             st.metric("Mean Coancestry (0.5*c'Ac)", f"{mean_coancestry:.6f}")
         with col3:
-            st.metric("Objective Value", f"{objective_value:.6f}")
+            st.metric("Objective Function (c'g - λc'Ac)", f"{objective_value:.6f}")
         
         st.markdown("---")
         st.subheader("Constraint Check")
@@ -477,22 +492,42 @@ with tab4:
             valid_merits = frontier['genetic_merits'][valid_mask]
             valid_coancestries = frontier['coancestries'][valid_mask]
             
-            # Create plot
-            fig, ax = plt.subplots(figsize=(12, 8))
-            scatter = ax.scatter(valid_coancestries, valid_merits, c=valid_lambda, 
-                               cmap='viridis', s=100, alpha=0.7, edgecolors='black', linewidth=1.5)
-            ax.plot(valid_coancestries, valid_merits, 'k--', alpha=0.3, linewidth=1)
+            # Create plot with Plotly for interactivity
+            fig = go.Figure()
             
-            ax.set_xlabel('Mean Coancestry', fontsize=12)
-            ax.set_ylabel('Genetic Merit', fontsize=12)
-            ax.set_title('Frontier of Optimal Solutions', fontsize=14, pad=20)
-            ax.grid(True, alpha=0.3)
+            # Add scatter plot with hover information
+            fig.add_trace(go.Scatter(
+                x=valid_coancestries,
+                y=valid_merits,
+                mode='lines+markers',
+                marker=dict(
+                    size=10,
+                    color=valid_lambda,
+                    colorscale='Viridis',
+                    showscale=True,
+                    colorbar=dict(title="Lambda (λ)"),
+                    line=dict(width=1.5, color='black')
+                ),
+                line=dict(width=2, color='rgba(100,100,100,0.3)', dash='dash'),
+                hovertemplate='<b>λ = %{marker.color:.3f}</b><br>' +
+                             'Coancestry = %{x:.6f}<br>' +
+                             'Genetic Merit = %{y:.6f}<br>' +
+                             '<extra></extra>',
+                showlegend=False
+            ))
             
-            cbar = plt.colorbar(scatter, ax=ax)
-            cbar.set_label('Lambda (λ)', fontsize=11)
+            fig.update_layout(
+                title='Frontier of Optimal Solutions',
+                xaxis_title='Mean Coancestry',
+                yaxis_title='Genetic Merit',
+                height=400,
+                hovermode='closest',
+                plot_bgcolor='white',
+                xaxis=dict(gridcolor='lightgray', gridwidth=0.5),
+                yaxis=dict(gridcolor='lightgray', gridwidth=0.5)
+            )
             
-            plt.tight_layout()
-            st.pyplot(fig)
+            st.plotly_chart(fig, use_container_width=True)
             
             # Point selection
             st.subheader("Explore Specific Solutions")
