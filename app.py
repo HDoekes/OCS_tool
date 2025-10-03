@@ -137,12 +137,12 @@ with tab1:
                     "Contribution": st.column_config.NumberColumn("Contribution", format="%.6f", min_value=0.0, max_value=1.0)
                 },
                 hide_index=True,
-                use_container_width=True,
+                width='stretch',
                 key="animal_editor"
             )
             
             # Submit button
-            submitted = st.form_submit_button("💾 Save Animal Data", use_container_width=True)
+            submitted = st.form_submit_button("💾 Save Animal Data", width='stretch')
             
             if submitted:
                 # Update session state from edited dataframe
@@ -196,7 +196,7 @@ with tab1:
                         )
             
             # Submit button
-            matrix_submitted = st.form_submit_button("💾 Save A-Matrix", use_container_width=True)
+            matrix_submitted = st.form_submit_button("💾 Save A-Matrix", width='stretch')
             
             if matrix_submitted:
                 st.session_state.A_matrix = new_A
@@ -209,7 +209,7 @@ with tab1:
                 columns=[f"Animal {i+1}" for i in range(n)],
                 index=[f"Animal {i+1}" for i in range(n)]
             )
-            st.dataframe(full_A_df, use_container_width=True)
+            st.dataframe(full_A_df, width='stretch')
     
     # File operations at the bottom
     st.markdown("---")
@@ -223,7 +223,7 @@ with tab1:
     
     with col1:
         st.markdown("**Save Setup**")
-        if st.button("💾 Generate JSON File", use_container_width=True):
+        if st.button("💾 Generate JSON File", width='stretch'):
             if st.session_state.animal_data and st.session_state.A_matrix is not None:
                 setup_data = {
                     'num_animals': st.session_state.num_animals,
@@ -237,7 +237,7 @@ with tab1:
                     data=json_str,
                     file_name="ocs_setup.json",
                     mime="application/json",
-                    use_container_width=True
+                    width='stretch'
                 )
             else:
                 st.warning("Please initialize animals first!")
@@ -280,7 +280,7 @@ with tab2:
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("🎯 Find Optimal Contributions", type="primary", use_container_width=True):
+            if st.button("🎯 Find Optimal Contributions", type="primary", width='stretch'):
                 g = np.array([animal['breeding_value'] for animal in st.session_state.animal_data])
                 A = st.session_state.A_matrix
                 
@@ -302,7 +302,7 @@ with tab2:
                             st.error(f"Optimization failed: {result.message}")
         
         with col2:
-            if st.button("🔄 Reset Contributions", use_container_width=True):
+            if st.button("🔄 Reset Contributions", width='stretch'):
                 for animal in st.session_state.animal_data:
                     animal['contribution'] = 0.0
                 st.success("Contributions reset!")
@@ -319,7 +319,7 @@ with tab2:
                 'Contribution': animal['contribution']
             })
         
-        st.dataframe(pd.DataFrame(contrib_data), use_container_width=True)
+        st.dataframe(pd.DataFrame(contrib_data), width='stretch')
 
 # TAB 3: RESULTS
 with tab3:
@@ -397,7 +397,7 @@ with tab3:
                 'Contribution': animal['contribution']
             })
         
-        st.dataframe(pd.DataFrame(contrib_data), use_container_width=True)
+        st.dataframe(pd.DataFrame(contrib_data), width='stretch')
 
 # TAB 4: INTERACTIVE FRONTIER
 with tab4:
@@ -421,7 +421,7 @@ with tab4:
             num_points = st.number_input("Number of Points", min_value=5, max_value=100, value=20, step=5)
         with col4:
             st.write("")  # Spacing
-            generate_button = st.button("🚀 Generate Frontier", type="primary", use_container_width=True)
+            generate_button = st.button("🚀 Generate Frontier", type="primary", width='stretch')
         
         if generate_button:
             if min_lambda >= max_lambda:
@@ -551,7 +551,7 @@ with tab4:
                 paper_bgcolor='white'
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
             
             # Point selection
             st.subheader("Explore Specific Solutions")
@@ -587,7 +587,7 @@ with tab4:
                         'Optimal Contribution': contrib
                     })
                 
-                st.dataframe(pd.DataFrame(contrib_data), use_container_width=True)
+                st.dataframe(pd.DataFrame(contrib_data), width='stretch')
                 
                 if st.button("Apply These Contributions"):
                     for i, contrib in enumerate(frontier['contributions'][selected_idx]):
