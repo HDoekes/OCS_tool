@@ -85,7 +85,7 @@ It implements Optimal Contribution Selection (OCS) theory for genetic improvemen
 """)
 
 # Create tabs
-tab1, tab2, tab3 = st.tabs(["📋 Setup", "⚡ Optimization", "📊 Interactive Analysis"])
+tab1, tab2, tab3, tab4 = st.tabs(["📋 Setup", "⚡ Optimization", "📊 Current Metrics", "📈 Interactive Frontier"])
 
 # TAB 1: SETUP
 with tab1:
@@ -102,10 +102,6 @@ with tab1:
             initialize_animals(num_animals)
             st.success(f"Initialized {num_animals} animals!")
             st.rerun()
-    
-    with col2:
-        st.subheader("Inbreeding Penalty")
-        st.session_state.lambda_penalty = st.number_input("Lambda (λ):", min_value=0.0, value=st.session_state.lambda_penalty, step=0.1, format="%.2f")
     
     # Animal data entry
     if st.session_state.animal_data:
@@ -257,6 +253,19 @@ with tab2:
     if not st.session_state.animal_data:
         st.warning("Please initialize animals in the Setup tab first!")
     else:
+        # Lambda parameter
+        st.subheader("Inbreeding Penalty")
+        st.session_state.lambda_penalty = st.number_input(
+            "Lambda (λ):", 
+            min_value=0.0, 
+            value=st.session_state.lambda_penalty, 
+            step=0.1, 
+            format="%.2f",
+            help="Controls the trade-off between genetic merit and inbreeding control. Higher values penalize inbreeding more."
+        )
+        
+        st.markdown("---")
+        
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -282,18 +291,32 @@ with tab2:
                             st.error(f"Optimization failed: {result.message}")
         
         with col2:
-            if st.button("📊 Calculate Current Metrics", use_container_width=True):
-                st.session_state.show_metrics = True
-        
-        with col3:
             if st.button("🔄 Reset Contributions", use_container_width=True):
                 for animal in st.session_state.animal_data:
                     animal['contribution'] = 0.0
                 st.success("Contributions reset!")
                 st.rerun()
         
-        # Display metrics
-        st.subheader("Current Results")
+        # Display current contributions
+        st.subheader("Current Contributions")
+        contrib_data = []
+        for i, animal in enumerate(st.session_state.animal_data):
+            contrib_data.append({
+                'Animal': i + 1,
+                'Sex': animal['sex'],
+                'Breeding Value': animal['breeding_value'],
+                'Contribution': animal['contribution']
+            })
+        
+        st.dataframe(pd.DataFrame(contrib_data), use_container_width=True)
+
+# TAB 3: CURRENT METRICS
+with tab3:
+    st.header("Current Metrics")
+    
+    if not st.session_state.animal_data:
+        st.warning("Please initialize animals in the Setup tab first!")
+    else:
         
         c = np.array([animal['contribution'] for animal in st.session_state.animal_data])
         g = np.array([animal['breeding_value'] for animal in st.session_state.animal_data])
@@ -309,6 +332,7 @@ with tab2:
         male_sum = np.sum(c[male_indices]) if male_indices else 0
         female_sum = np.sum(c[female_indices]) if female_indices else 0
         
+        st.subheader("Summary Metrics")
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -318,13 +342,36 @@ with tab2:
         with col3:
             st.metric("Objective Value", f"{objective_value:.6f}")
         
+        st.markdown("---")
         st.subheader("Constraint Check")
         col1, col2 = st.columns(2)
         with col1:
-            st.metric("Male contributions sum", f"{male_sum:.6f}", delta=f"{male_sum - 0.5:.6f}" if abs(male_sum - 0.5) > 1e-6 else "✓")
-        with col2:
-            st.metric("Female contributions sum", f"{female_sum:.6f}", delta=f"{female_sum - 0.5:.6f}" if abs(female_sum - 0.5) > 1e-6 else "✓")
+            constraint_met = abs(male_sum - 0.5) < 1e-6
+            st.metric(
+                "Male contributions sum", 
+                f"{male_sum:.6f}", 
+                delta=None if constraint_met else f"{male_sum - 0.5:.6f}",
+                delta_color="normal" if constraint_met else "inverse"
+            )
+            if constraint_met:
+                st.success("✓ Constraint satisfied")
+            else:
+                st.warning("⚠ Should equal 0.5")
         
+        with col2:
+            constraint_met = abs(female_sum - 0.5) < 1e-6
+            st.metric(
+                "Female contributions sum", 
+                f"{female_sum:.6f}", 
+                delta=None if constraint_met else f"{female_sum - 0.5:.6f}",
+                delta_color="normal" if constraint_met else "inverse"
+            )
+            if constraint_met:
+                st.success("✓ Constraint satisfied")
+            else:
+                st.warning("⚠ Should equal 0.5")
+        
+        st.markdown("---")
         # Individual contributions
         st.subheader("Individual Contributions")
         contrib_data = []
@@ -338,15 +385,15 @@ with tab2:
         
         st.dataframe(pd.DataFrame(contrib_data), use_container_width=True)
 
-# TAB 3: INTERACTIVE ANALYSIS
-with tab3:
+# TAB 4: INTERACTIVE FRONTIER
+with tab4:
     st.header("Interactive Frontier Analysis")
     
     if not st.session_state.animal_data:
         st.warning("Please initialize animals in the Setup tab first!")
     else:
         st.markdown("""
-        Generate the Pareto frontier showing the trade-off between genetic merit and mean coancestry
+        Generate the frontier showing the trade-off between genetic merit and mean coancestry
         across different values of the penalty parameter λ.
         """)
         
@@ -438,7 +485,7 @@ with tab3:
             
             ax.set_xlabel('Mean Coancestry', fontsize=12)
             ax.set_ylabel('Genetic Merit', fontsize=12)
-            ax.set_title('Pareto Frontier of Optimal Solutions', fontsize=14, pad=20)
+            ax.set_title('Frontier of Optimal Solutions', fontsize=14, pad=20)
             ax.grid(True, alpha=0.3)
             
             cbar = plt.colorbar(scatter, ax=ax)
