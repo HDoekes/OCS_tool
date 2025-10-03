@@ -252,7 +252,9 @@ with tab1:
                 st.session_state.animal_data = setup_data['animal_data']
                 st.session_state.A_matrix = np.array(setup_data['A_matrix'])
                 st.session_state.lambda_penalty = setup_data['lambda_penalty']
-                st.success("Setup loaded successfully!")
+                
+                # Force a complete reload by clearing the file uploader
+                st.success("Setup loaded successfully! The page will refresh to display the data.")
                 st.rerun()
             except Exception as e:
                 st.error(f"Error loading setup: {str(e)}")
