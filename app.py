@@ -86,7 +86,7 @@ It implements Optimal Contribution Selection (OCS) theory for genetic improvemen
 """)
 
 # Create tabs
-tab1, tab2, tab3, tab4 = st.tabs(["📋 Setup", "📊 Current Metrics", "⚡ Optimization", "📈 Interactive Frontier"])
+tab1, tab2, tab3, tab4 = st.tabs(["📋 Setup", "⚡ Optimization", "📊 Results", "📈 Interactive Frontier"])
 
 # TAB 1: SETUP
 with tab1:
@@ -256,8 +256,8 @@ with tab1:
             except Exception as e:
                 st.error(f"Error loading setup: {str(e)}")
 
-# TAB 3: OPTIMIZATION
-with tab3:
+# TAB 2: OPTIMIZATION
+with tab2:
     st.header("Optimization")
     
     if not st.session_state.animal_data:
@@ -320,13 +320,12 @@ with tab3:
         
         st.dataframe(pd.DataFrame(contrib_data), use_container_width=True)
 
-# TAB 2: CURRENT METRICS
-with tab2:
-    st.header("Current Metrics")
+# TAB 3: RESULTS
+with tab3:
+    st.header("Results")
     st.markdown("""
-    Determines the summary metrics, based on the current contributions set in the "Setup" tab 
-    (note: you can change those contributions and see how they affect the genetic merit and 
-    coancestry in the offspring generation).
+    Below are the results, which are either based on the contributions set by the user in the "Setup" tab, 
+    or based on the optimized contributions (for a given inbreeding penalty) when the optimization tab has been run.
     """)
     
     if not st.session_state.animal_data:
@@ -502,29 +501,47 @@ with tab4:
                 mode='lines+markers',
                 marker=dict(
                     size=10,
-                    color=valid_lambda,
-                    colorscale='Viridis',
-                    showscale=True,
-                    colorbar=dict(title="Lambda (λ)"),
+                    color='#2E86AB',  # Single color - blue
                     line=dict(width=1.5, color='black')
                 ),
-                line=dict(width=2, color='rgba(100,100,100,0.3)', dash='dash'),
-                hovertemplate='<b>λ = %{marker.color:.3f}</b><br>' +
+                line=dict(width=2.5, color='#2E86AB'),
+                hovertemplate='<b>λ = %{customdata:.3f}</b><br>' +
                              'Coancestry = %{x:.6f}<br>' +
                              'Genetic Merit = %{y:.6f}<br>' +
                              '<extra></extra>',
+                customdata=valid_lambda,
                 showlegend=False
             ))
             
             fig.update_layout(
-                title='Frontier of Optimal Solutions',
-                xaxis_title='Mean Coancestry',
-                yaxis_title='Genetic Merit',
-                height=400,
+                title=dict(
+                    text='Frontier of Optimal Solutions',
+                    font=dict(size=20, color='black')
+                ),
+                xaxis=dict(
+                    title=dict(text='Mean Coancestry', font=dict(size=16, color='black')),
+                    gridcolor='lightgray',
+                    gridwidth=0.5,
+                    showline=True,
+                    linewidth=2,
+                    linecolor='black',
+                    mirror=True,
+                    tickfont=dict(size=14, color='black')
+                ),
+                yaxis=dict(
+                    title=dict(text='Genetic Merit', font=dict(size=16, color='black')),
+                    gridcolor='lightgray',
+                    gridwidth=0.5,
+                    showline=True,
+                    linewidth=2,
+                    linecolor='black',
+                    mirror=True,
+                    tickfont=dict(size=14, color='black')
+                ),
+                height=520,
                 hovermode='closest',
                 plot_bgcolor='white',
-                xaxis=dict(gridcolor='lightgray', gridwidth=0.5),
-                yaxis=dict(gridcolor='lightgray', gridwidth=0.5)
+                paper_bgcolor='white'
             )
             
             st.plotly_chart(fig, use_container_width=True)
