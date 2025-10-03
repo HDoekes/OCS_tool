@@ -244,20 +244,19 @@ with tab1:
     
     with col2:
         st.markdown("**Load Setup**")
-        uploaded_file = st.file_uploader("📂 Upload JSON file", type=['json'], label_visibility="collapsed")
+        uploaded_file = st.file_uploader("📂 Upload JSON file", type=['json'], label_visibility="collapsed", key="json_uploader")
         if uploaded_file is not None:
-            try:
-                setup_data = json.load(uploaded_file)
-                st.session_state.num_animals = setup_data['num_animals']
-                st.session_state.animal_data = setup_data['animal_data']
-                st.session_state.A_matrix = np.array(setup_data['A_matrix'])
-                st.session_state.lambda_penalty = setup_data['lambda_penalty']
-                
-                # Force a complete reload by clearing the file uploader
-                st.success("Setup loaded successfully! The page will refresh to display the data.")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error loading setup: {str(e)}")
+            if st.button("Load Data from File"):
+                try:
+                    setup_data = json.load(uploaded_file)
+                    st.session_state.num_animals = setup_data['num_animals']
+                    st.session_state.animal_data = setup_data['animal_data']
+                    st.session_state.A_matrix = np.array(setup_data['A_matrix'])
+                    st.session_state.lambda_penalty = setup_data['lambda_penalty']
+                    st.success("Setup loaded successfully!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error loading setup: {str(e)}")
 
 # TAB 2: OPTIMIZATION
 with tab2:
