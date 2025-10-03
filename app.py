@@ -438,11 +438,7 @@ with tab4:
                 if not male_indices or not female_indices:
                     st.error("Need both males and females for analysis!")
                 else:
-                    # Generate lambda values based on spacing type
-                    if spacing_type == "Logarithmic":
-                        lambda_values = np.logspace(np.log10(min_lambda), np.log10(max_lambda), num_points)
-                    else:  # Linear
-                        lambda_values = np.linspace(min_lambda, max_lambda, num_points)
+                    lambda_values = np.linspace(min_lambda, max_lambda, num_points)
                     
                     genetic_merits = []
                     coancestries = []
